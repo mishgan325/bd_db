@@ -6,14 +6,19 @@ class Attack(models.Model):
     framedata = models.IntegerField(blank=True, null=True)
     damage = models.FloatField(blank=True, null=True)
 
+
+    def __str__(self):
+        return self.attack_name
+
     class Meta:
+
         managed = False
         db_table = 'attacks'
 
 
 class CharacterAttack(models.Model):
-    character = models.OneToOneField('GameCharacter', models.DO_NOTHING, primary_key=True)
-    attack = models.ForeignKey(Attack, models.DO_NOTHING)
+    character = models.OneToOneField('GameCharacter', models.CASCADE, primary_key=True)
+    attack = models.ForeignKey(Attack, models.CASCADE)
 
     class Meta:
         managed = False
@@ -25,14 +30,17 @@ class GameCharacter(models.Model):
     character_name = models.CharField(max_length=255)
     lore = models.CharField(max_length=255)
 
+    def __str__(self):
+        return self.character_name
+    
     class Meta:
         managed = False
         db_table = 'game_characters'
 
 
 class PlayerCharacterRank(models.Model):
-    player = models.OneToOneField('Player', models.DO_NOTHING, primary_key=True)
-    character = models.ForeignKey(GameCharacter, models.DO_NOTHING)
+    player = models.OneToOneField('Player', models.CASCADE, primary_key=True)
+    character = models.ForeignKey(GameCharacter, models.CASCADE)
     character_rank = models.IntegerField(blank=True, null=True)
 
     class Meta:
@@ -42,8 +50,8 @@ class PlayerCharacterRank(models.Model):
 
 
 class PlayerServer(models.Model):
-    player = models.OneToOneField('Player', models.DO_NOTHING, primary_key=True)
-    server = models.ForeignKey('Server', models.DO_NOTHING)
+    player = models.OneToOneField('Player', models.CASCADE, primary_key=True)
+    server = models.ForeignKey('Server', models.CASCADE)
 
     class Meta:
         managed = False
@@ -54,6 +62,9 @@ class PlayerServer(models.Model):
 class Player(models.Model):
     nickname = models.CharField(max_length=255)
 
+    def __str__(self):
+        return self.nickname
+
     class Meta:
         managed = False
         db_table = 'players'
@@ -63,6 +74,9 @@ class Server(models.Model):
     location = models.CharField(max_length=255)
     expiration_date = models.DateField()
     is_active = models.IntegerField()
+
+    def __str__(self):
+        return self.location
 
     class Meta:
         managed = False

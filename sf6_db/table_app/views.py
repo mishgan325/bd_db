@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from django.forms import modelform_factory
 from .models import *  # Импортируем все модели
 from django.http import Http404
+from django.contrib.auth.decorators import login_required
 
 
 EXCLUDED_TABLES = [
@@ -60,22 +61,36 @@ def get_model_by_name(table_name):
         raise Http404("Модель не найдена для таблицы: " + table_name, 'model_name:', model_name)
 
 
-def edit_record(request, table_name, record_id):
+@login_required
+def edit_record(request, table_name, first_key, second_key=None):
     # Получаем модель по имени таблицы
     model = get_model_by_name(table_name)
-    
+
     # Получаем запись по ID
-    record = get_object_or_404(model, id=record_id)
+    record = None
+
+    if model == PlayerServer:
+        record = get_object_or_404(model, player_id=first_key, server_id=second_key)
+    elif model == CharacterAttack:
+        record = get_object_or_404(model, character_id=first_key, attack_id=second_key)
+    elif model == PlayerCharacterRank:
+        record = get_object_or_404(model, player_id=first_key, character_id=second_key)
+    else:
+        record = get_object_or_404(model, id=first_key)
 
     # Создаем форму для этой модели
     form_class = modelform_factory(model, exclude=['id'])  # Исключаем поле 'id'
     form = form_class(instance=record)
 
     if request.method == 'POST':
+
         form = form_class(request.POST, instance=record)
         if form.is_valid():
-            form.save()
-            return redirect('view_table', table_name=table_name)
+            
+            if second_key:
+                record.delete()
+            form.save()   
+            return redirect('table_app:view_table', table_name=table_name)
     
     context = {
         'form': form,
@@ -83,3 +98,28 @@ def edit_record(request, table_name, record_id):
         'record': record,
     }
     return render(request, 'table_app/edit_record.html', context)
+
+
+@login_required
+def delete_record(request, table_name, first_key, second_key=None):
+    # Получаем модель по имени таблицы
+    model = get_model_by_name(table_name)
+
+    # Получаем запись по ID
+    record = None
+
+    if model == PlayerServer:
+        record = get_object_or_404(model, player_id=first_key, server_id=second_key)
+    elif model == CharacterAttack:
+        record = get_object_or_404(model, character_id=first_key, attack_id=second_key)
+    elif model == PlayerCharacterRank:
+        record = get_object_or_404(model, player_id=first_key, character_id=second_key)
+    else:
+        record = get_object_or_404(model, id=first_key)
+
+    # Удаляем запись
+    if request.method == 'POST':
+        record.delete()
+        return redirect('table_app:list_tables')  # Перенаправление на список таблиц после удаления
+
+    return render(request, 'table_app/confirm_delete.html', {'record': record})
