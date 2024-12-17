@@ -6,6 +6,8 @@ from django.forms import modelform_factory
 from .models import *  # Импортируем все модели
 from django.http import Http404
 from django.contrib.auth.decorators import login_required
+from django.forms.models import model_to_dict
+from .forms import GameCharacterForm
 
 
 EXCLUDED_TABLES = [
@@ -70,21 +72,28 @@ def edit_record(request, table_name, first_key, second_key=None):
     record = None
 
     if model == PlayerServer:
-        record = get_object_or_404(model, player_id=first_key, server_id=second_key)
+        record = get_object_or_404(model, player=first_key, server=second_key)
     elif model == CharacterAttack:
-        record = get_object_or_404(model, character_id=first_key, attack_id=second_key)
+        record = get_object_or_404(model, character=first_key, attack=second_key)
     elif model == PlayerCharacterRank:
-        record = get_object_or_404(model, player_id=first_key, character_id=second_key)
+        record = get_object_or_404(model, player=first_key, character=second_key)
     else:
         record = get_object_or_404(model, id=first_key)
 
     # Создаем форму для этой модели
-    form_class = modelform_factory(model, exclude=['id'])  # Исключаем поле 'id'
+
+    if model == GameCharacter:
+        form_class = GameCharacterForm  # Ваша форма для GameCharacter
+        print('should be unique')
+    else:
+        form_class = modelform_factory(model, exclude=['id'])  # Создаем форму по умолчанию для других моделей
+
     form = form_class(instance=record)
 
     if request.method == 'POST':
 
-        form = form_class(request.POST, instance=record)
+        form = form_class(request.POST, request.FILES, instance=record)  # Обрабатываем файлы с request.FILES
+        
         if form.is_valid():
             
             if second_key:
@@ -99,27 +108,53 @@ def edit_record(request, table_name, first_key, second_key=None):
     }
     return render(request, 'table_app/edit_record.html', context)
 
-
 @login_required
 def delete_record(request, table_name, first_key, second_key=None):
     # Получаем модель по имени таблицы
     model = get_model_by_name(table_name)
 
-    # Получаем запись по ID
+    # Определяем запись
     record = None
-
     if model == PlayerServer:
-        record = get_object_or_404(model, player_id=first_key, server_id=second_key)
+        record = model.objects.filter(player=first_key, server=second_key).first()
     elif model == CharacterAttack:
-        record = get_object_or_404(model, character_id=first_key, attack_id=second_key)
+        print('fuck db')
+        record = get_object_or_404(model, character=first_key, attack=second_key)
+        print("i'm here")
     elif model == PlayerCharacterRank:
-        record = get_object_or_404(model, player_id=first_key, character_id=second_key)
+        record = model.objects.filter(player=first_key, character=second_key).first()
     else:
-        record = get_object_or_404(model, id=first_key)
+        record = model.objects.filter(id=first_key).first()
+
+    if not record:
+        raise Http404("Запись не найдена")
 
     # Удаляем запись
     if request.method == 'POST':
         record.delete()
-        return redirect('table_app:list_tables')  # Перенаправление на список таблиц после удаления
+        return redirect('table_app:view_table', table_name=table_name)
 
-    return render(request, 'table_app/confirm_delete.html', {'record': record})
+    model_from_record = model_to_dict(record)
+
+    # Передаём запись в шаблон для отображения
+    return render(request, 'table_app/confirm_delete.html', {
+        'record': model_from_record.values(),
+        'columns': list(model_from_record.keys()),
+        'table_name': table_name
+    })
+
+
+@login_required
+def add_record(request, table_name):
+    model = get_model_by_name(table_name)
+    form_class = modelform_factory(model, exclude=['id'])  # Исключаем поле 'id'
+    form = form_class()
+
+    if request.method == 'POST':
+        form = form_class(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('table_app:view_table', table_name=table_name)
+
+    context = {'form': form, 'table_name': table_name}
+    return render(request, 'table_app/add_record.html', context)

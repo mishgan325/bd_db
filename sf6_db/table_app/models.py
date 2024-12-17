@@ -6,18 +6,16 @@ class Attack(models.Model):
     framedata = models.IntegerField(blank=True, null=True)
     damage = models.FloatField(blank=True, null=True)
 
-
     def __str__(self):
         return self.attack_name
 
     class Meta:
-
         managed = False
         db_table = 'attacks'
 
 
 class CharacterAttack(models.Model):
-    character = models.OneToOneField('GameCharacter', models.CASCADE, primary_key=True)
+    character = models.ForeignKey('GameCharacter', models.CASCADE)
     attack = models.ForeignKey(Attack, models.CASCADE)
 
     class Meta:
@@ -29,6 +27,8 @@ class CharacterAttack(models.Model):
 class GameCharacter(models.Model):
     character_name = models.CharField(max_length=255)
     lore = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='characters', blank=True, null=True)
+    
 
     def __str__(self):
         return self.character_name
@@ -39,7 +39,7 @@ class GameCharacter(models.Model):
 
 
 class PlayerCharacterRank(models.Model):
-    player = models.OneToOneField('Player', models.CASCADE, primary_key=True)
+    player = models.ForeignKey('Player', models.CASCADE)
     character = models.ForeignKey(GameCharacter, models.CASCADE)
     character_rank = models.IntegerField(blank=True, null=True)
 
@@ -50,7 +50,7 @@ class PlayerCharacterRank(models.Model):
 
 
 class PlayerServer(models.Model):
-    player = models.OneToOneField('Player', models.CASCADE, primary_key=True)
+    player = models.ForeignKey('Player', models.CASCADE)
     server = models.ForeignKey('Server', models.CASCADE)
 
     class Meta:
