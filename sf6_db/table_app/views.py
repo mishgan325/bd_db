@@ -158,3 +158,43 @@ def add_record(request, table_name):
 
     context = {'form': form, 'table_name': table_name}
     return render(request, 'table_app/add_record.html', context)
+
+
+def count_attacks(request, character_id):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT count_character_attacks(%s);", [character_id])
+        attack_count = cursor.fetchone()[0]  # Получаем результат функции
+
+    return render(request, 'table_app/count_attacks.html', {'character_name': GameCharacter.objects.filter(id=character_id).first, 'attack_count': attack_count})
+
+
+def attack_list(request):
+    # Получаем GET параметры
+    damage_min = request.GET.get('damage_min')
+    damage_max = request.GET.get('damage_max')
+    framedata_min = request.GET.get('framedata_min')
+    framedata_max = request.GET.get('framedata_max')
+
+    # Начальный QuerySet
+    attacks = Attack.objects.all()
+
+    # Применяем фильтры
+    if damage_min:
+        attacks = attacks.filter(damage__gte=damage_min)
+    if damage_max:
+        attacks = attacks.filter(damage__lte=damage_max)
+    if framedata_min:
+        attacks = attacks.filter(framedata__gte=framedata_min)
+    if framedata_max:
+        attacks = attacks.filter(framedata__lte=framedata_max)
+
+    # Добавляем пагинацию
+    paginator = Paginator(attacks, 6)  # 6 записей на странице
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Передаем пагинированные записи
+    context = {
+        'attacks': page_obj
+    }
+    return render(request, 'table_app/attack_list.html', context)
