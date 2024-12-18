@@ -7,7 +7,6 @@ from .models import *  # Импортируем все модели
 from django.http import Http404
 from django.contrib.auth.decorators import login_required
 from django.forms.models import model_to_dict
-from .forms import GameCharacterForm
 
 
 EXCLUDED_TABLES = [
@@ -82,11 +81,11 @@ def edit_record(request, table_name, first_key, second_key=None):
 
     # Создаем форму для этой модели
 
-    if model == GameCharacter:
-        form_class = GameCharacterForm  # Ваша форма для GameCharacter
-        print('should be unique')
-    else:
-        form_class = modelform_factory(model, exclude=['id'])  # Создаем форму по умолчанию для других моделей
+    # if model == GameCharacter:
+    #     form_class = GameCharacterForm  # Ваша форма для GameCharacter
+    #     print('should be unique')
+    # else:
+    form_class = modelform_factory(model, exclude=['id'])  # Создаем форму по умолчанию для других моделей
 
     form = form_class(instance=record)
 
