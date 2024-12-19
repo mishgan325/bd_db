@@ -25,7 +25,7 @@ def list_tables(request):
     # Исключаем стандартные Django-таблицы
     user_tables = [table for table in all_tables if table not in EXCLUDED_TABLES]
 
-    return render(request, 'table_app/list_tables.html', {'tables': user_tables})
+    return render(request, 'db_app/list_tables.html', {'tables': user_tables})
 
 
 def view_table(request, table_name):
@@ -117,9 +117,7 @@ def delete_record(request, table_name, first_key, second_key=None):
     if model == PlayerServer:
         record = model.objects.filter(player=first_key, server=second_key).first()
     elif model == CharacterAttack:
-        print('fuck db')
         record = get_object_or_404(model, character=first_key, attack=second_key)
-        print("i'm here")
     elif model == PlayerCharacterRank:
         record = model.objects.filter(player=first_key, character=second_key).first()
     else:
